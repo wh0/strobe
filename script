@@ -1,0 +1,30 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = prereqs ]; then
+	exit 0
+fi
+
+strobe=
+
+for x in $(cat /proc/cmdline); do
+	case "$x" in
+		strobe)
+			strobe=y ;;
+	esac
+done
+
+test -z "$strobe" && exit 0
+
+set -x
+
+mkdir /strobe /strobe/root /strobe/cow
+mount -o move "$rootmnt" /strobe/root
+mount -t tmpfs tmpfs /strobe/cow
+mkdir /strobe/cow/rw /strobe/cow/work
+mount -t overlay overlay "$rootmnt" -o lowerdir=/strobe/root,upperdir=/strobe/cow/rw,workdir=/strobe/cow/work
+mkdir "$rootmnt"/strobe "$rootmnt"/strobe/root "$rootmnt"/strobe/cow
+mount -o move /strobe/root "$rootmnt"/strobe/root
+mount -o move /strobe/cow "$rootmnt"/strobe/cow
+rmdir /strobe/root /strobe/cow /strobe
